@@ -1,0 +1,4 @@
+task_name=check_liveuamap desc=Screenshot_liveuamap.com_twice_a_day args=xkurqvrs timer={success:12h,fail:3h,*:1d} last_attempt_time=1655991163 last_result=success enabled=true 
+task_name=genshin_daily_site_login desc=Claim_a_daily_bonus_in_Genshin_Impact args=dskjhasd timer={success:1d,*:12h} last_attempt_time=1656000325 last_result=success 
+task_name=daily_wordle desc=Play_a_daily_Wordle_game timer={*:1d} last_attempt_time=1656020465 last_result=something_failed 
+task_name=summon_browser desc=A_debug_Chrome_instance_(visit_about:about_to_finish) timer={*:10000w} last_result=success last_attempt_time=1653317324 
