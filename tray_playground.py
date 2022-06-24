@@ -330,13 +330,14 @@ def task_handler(task_id):
             return "visit_fail"
 
         try:  # close the popup if it pops
-            time.sleep(3)
-            close_button_script = "return document.querySelector('game-app')" + \
-                ".shadowRoot.querySelector('game-modal').shadowRoot.querySelector('game-icon')"
+            # time.sleep(3)
+            # close_button_script = "return document.querySelector('game-app')" + \
+            #     ".shadowRoot.querySelector('game-modal').shadowRoot.querySelector('game-icon')"
+            close_button_script = "return document.querySelector('div .game-icon')"  # redesign on June 23, 2022...
             close_button = driver.execute_script(close_button_script)
             if close_button.is_displayed():
                 close_button.click()
-            time.sleep(3)
+            time.sleep(1)
             print("Closed the popup.")
         except Exception as e:
             print("Something's wrong, close button is not pressed properly:", e)
@@ -362,12 +363,27 @@ def task_handler(task_id):
                 # selected_index = rigged_random(len(word_list))
                 selected_index = secrets.randbelow(len(word_list))
                 new_word = word_list[selected_index]
-                get_word_script = '''let r = ''; for (step = 0; step < 5; step++) { b1 = document.querySelector(
-                'game-app').shadowRoot.querySelectorAll('game-row')[''' + str(attempts) + \
-                                  '''
-                ].shadowRoot.querySelectorAll('game-tile')[
-                step].shadowRoot.querySelector('div.tile'); a = b1.innerHTML; r += a; } return r; '''
+
+                # get_word_script = '''let r = ''; for (step = 0; step < 5; step++) { b1 = document.querySelector(
+                # 'game-app').shadowRoot.querySelectorAll('game-row')[''' + str(attempts) + \
+                #                   '''
+                # ].shadowRoot.querySelectorAll('game-tile')[
+                # step].shadowRoot.querySelector('div.tile'); a = b1.innerHTML; r += a; } return r; '''
+                # this get_word_script is outdated since June 23, 2022 (redesign)
+
+                get_word_script = '''
+                elems = document.evaluate('//div[contains(@class, "Row")][''' + str(attempts + 1) + \
+                                  ''']', document, null, XPathResult.ANY_TYPE, null);
+                elem = elems.iterateNext()
+                let r = ''; var letters = elem.querySelectorAll("div");
+                letters.forEach(function(userItem) {
+                    if (userItem.children.length === 0) {
+                        r += userItem.textContent
+                    }
+                });
+                return r; '''
                 get_word = driver.execute_script(get_word_script)
+
                 if get_word != '':
                     new_word = get_word
                 else:
@@ -379,13 +395,31 @@ def task_handler(task_id):
                 log_file.write("Word: " + new_word + " | ")
                 print("Word: " + new_word + " | ", end="")
                 # new_pattern = give_pattern(right_word, new_word)  # !! or receive pattern from the site instead
-                get_status_script = '''let r = ''; for (step = 0; step < 5; step++) { b1 = document.querySelector(
-                'game-app').shadowRoot.querySelectorAll('game-row')[''' + str(attempts) + \
-                                    '''
-                ].shadowRoot.querySelectorAll('game-tile')[step].shadowRoot.querySelector('div.tile');
-                a = b1.getAttribute("data-state");
-                if (a=='correct'){r += 'g'} 
-                else if (a=='present'){r += 'y'} else if (a=='absent') {r+='b'} else {r += '?'}}; return r; '''
+
+                # get_status_script = '''let r = ''; for (step = 0; step < 5; step++) { b1 = document.querySelector(
+                # 'game-app').shadowRoot.querySelectorAll('game-row')[''' + str(attempts) + \
+                #                     '''
+                # ].shadowRoot.querySelectorAll('game-tile')[step].shadowRoot.querySelector('div.tile');
+                # a = b1.getAttribute("data-state");
+                # if (a=='correct'){r += 'g'}
+                # else if (a=='present'){r += 'y'} else if (a=='absent') {r+='b'} else {r += '?'}}; return r; '''
+                # this get_status_script is outdated since June 23, 2022 (redesign)
+
+                get_status_script = '''
+                elems = document.evaluate('//div[contains(@class, "Row")][''' + str(attempts + 1) + \
+                                    ''']', document, null, XPathResult.ANY_TYPE, null);
+                elem = elems.iterateNext()
+                let r = '';
+                var letters = elem.querySelectorAll("div");
+                letters.forEach(function(userItem) {
+                    if (userItem.children.length === 0) {
+                        if (userItem.getAttribute("data-state") == "correct") {r += 'g'}
+                        if (userItem.getAttribute("data-state") == "present") {r += 'y'}
+                        if (userItem.getAttribute("data-state") == "absent")  {r += 'b'}
+                    }
+                });
+                return r; '''
+
                 new_pattern = driver.execute_script(get_status_script)
                 log_file.write("Pattern: " + new_pattern + "\n")
                 print("Pattern: " + new_pattern)
@@ -444,6 +478,7 @@ def task_handler(task_id):
             return "out_of_attempts"
         except Exception as e:
             log_and_exit(e)
+            tray_icon.showMessage('Selenium Scheduler', 'Daily Wordle has failed. Please check the logs.')
             return "something_failed"
     # ----------------------------------------------------------------------------------------------------
 
